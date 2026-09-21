@@ -16,11 +16,31 @@ primero es ponerla en algún sitio con HTTPS.
 No hace falta compilar nada: son ficheros estáticos y el SDK va incluido en `vendor/`. Súbelos tal
 cual.
 
+### Las rutas del manifiesto, que es donde todo el mundo se estrella
+
+**Owlbear no resuelve las rutas del `manifest.json` como URLs relativas: las pega detrás del
+origen.** Es decir, toma `https://tu-dominio.com` y le concatena lo que pongas. Así que una ruta
+como `"action.html"` se convierte en `https://tu-dominio.comaction.html`, que no existe, y la
+extensión se queda en blanco y sin icono en la barra.
+
+Las rutas tienen que empezar por `/` **y llevar el subdirectorio donde esté alojada la extensión**:
+
+```json
+"icon": "/scene_minimap/icon.svg",
+"action": { "popover": "/scene_minimap/action.html", ... },
+"background_url": "/scene_minimap/background.html"
+```
+
+Si cambias el nombre del repositorio, o la mueves a la raíz de un dominio, **hay que ajustar esas
+cuatro rutas**. Es el único sitio del proyecto donde la ubicación está escrita a mano: el resto del
+código la deduce sola.
+
 ### Opción A — GitHub Pages (lo más rápido y gratis)
 
 1. Crea un repositorio y sube el contenido de esta carpeta a la raíz.
 2. *Settings → Pages → Deploy from a branch*, rama `main`, carpeta `/`.
 3. Tu manifiesto queda en `https://<usuario>.github.io/<repo>/manifest.json`.
+4. Pon el nombre del repositorio en las cuatro rutas del manifiesto, como arriba.
 
 ### Opción B — tu propio servidor
 
@@ -35,17 +55,17 @@ location /obr-minimap/ {
 ```
 
 La cabecera `Access-Control-Allow-Origin` importa: Owlbear pide el manifiesto desde su propio
-dominio y sin ella el navegador lo bloquea.
+dominio y sin ella el navegador lo bloquea. Y las rutas del manifiesto tendrían que ser
+`/obr-minimap/...`, siguiendo la regla de arriba.
 
 ### Y después, en Owlbear
 
 *Settings → Extensions → Add Custom Extension*, y pega la URL del `manifest.json`. Aparece el botón
 del minimapa en la barra de la izquierda.
 
-> **Si las imágenes o las páginas no cargan** y lo has alojado en un subdirectorio: las rutas del
-> `manifest.json` son relativas a propósito, para que funcionen tanto en la raíz de un dominio como
-> en un subdirectorio. Si tu instalación las resolviera mal, ponlas absolutas (`/icon.svg`,
-> `/action.html`, `/background.html`) y aloja la extensión en la raíz de un dominio o subdominio.
+> **Si el panel sale en blanco y no aparece el icono en la barra**, casi seguro son las rutas del
+> manifiesto: mira la sección de arriba. El navegador da la pista exacta — un error de DNS con el
+> dominio y el fichero pegados sin barra (`tu-dominio.comaction.html`).
 
 ### Probar el aspecto sin Owlbear
 
