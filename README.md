@@ -147,9 +147,17 @@ pone todos el master, no hay a quién seguir y el revelado automático no hace n
 El master ve lo no revelado translúcido, para trabajar sobre el mapa completo; los jugadores lo ven
 opaco. El marcador lo ven todos.
 
-La imagen se elige con el botón **Elegir de mi biblioteca de Owlbear**, que abre la misma
-biblioteca de siempre; o pegando una URL a mano, si la tienes alojada en otro sitio. Ojo: tiene que
-ser una imagen con CORS permitido — las de la biblioteca de Owlbear lo están.
+Hay tres maneras de decirle qué imagen usar:
+
+1. **Elegir de mi biblioteca de Owlbear** — abre tu biblioteca de siempre. La imagen que elijas se
+   asigna a la escena en ese momento, sin pasar por *Guardar*: al abrirse la biblioteca, Owlbear
+   cierra el panel de ajustes, así que no habría dónde volver. Lo hace el script de fondo, que
+   sigue vivo.
+2. **Elegir una imagen ya conocida** — un desplegable con los mapas que ya tienen revelado en esta
+   sala (elegir uno es compartir el revelado con las escenas que lo usan) y con las imágenes de la
+   capa de mapa de la escena abierta, por si quieres usar una de ellas como plano.
+3. **Pegar una URL** a mano, si la tienes alojada en otro sitio. Tiene que permitir CORS; las de la
+   biblioteca de Owlbear lo permiten.
 
 ## Cada escena con su mapa
 
@@ -252,6 +260,10 @@ Detalles que importan:
 
 ## Historial
 
+- **1.1.1** — El botón de la biblioteca de imágenes no hacía nada: al abrirse la biblioteca,
+  Owlbear cierra el panel de ajustes y con él moría el iframe que esperaba la respuesta. Ahora la
+  llamada la hace el script de fondo, que no se cierra. Los errores de esa llamada se ven en vez de
+  tragarse en silencio, y el desplegable ofrece además las imágenes de la escena abierta.
 - **1.1.0** — El minimapa se puede arrastrar por su cabecera y recuerda dónde lo dejaste. El
   selector de la biblioteca de imágenes pasa a primer plano, que antes era un botón diminuto al
   lado del campo de URL y no se veía.
