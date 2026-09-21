@@ -85,8 +85,8 @@ button.primary.off { background: var(--field, rgba(255, 255, 255, 0.08)); color:
 }
 
 .sub.off { display: none; }
-.sub .pick { display: flex; gap: 5px; }
-.sub .pick input { flex: 1; }
+
+button.wide { width: 100%; padding: 7px; }
 
 .hint {
   margin: 4px 0 0;

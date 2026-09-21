@@ -50,8 +50,14 @@ html, body {
   min-height: 18px;
 }
 
+/* La cabecera es el asa para arrastrar el panel */
+.mm-toolbar { cursor: move; }
+.mm-root.mm-moving { opacity: 0.55; }
+
 .mm-title {
   flex: 1;
+  cursor: move;
+  user-select: none;
   font-size: 0.68rem;
   color: #ccc;
   overflow: hidden;

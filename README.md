@@ -79,11 +79,18 @@ python3 -m http.server 8777
 ## Uso
 
 El botón de la barra abre el **panel de ajustes**; desde ahí se muestra u oculta el **minimapa**,
-que es una ventanita aparte anclada en la esquina que elijas. El minimapa se queda puesto: no se
-cierra al hacer clic en el tablero, y vuelve a salir solo la próxima vez que entres en la sala.
+que es una ventanita aparte. El minimapa se queda puesto: no se cierra al hacer clic en el tablero,
+y vuelve a salir solo la próxima vez que entres en la sala.
+
+**Colocarlo donde no estorbe**: arrástralo por su cabecera (la franja del título) y suéltalo donde
+quieras. Como Owlbear no deja mover una ventana de extensión, lo que se hace es cerrarla y volver a
+abrirla en el sitio nuevo, así que **el panel no se arrastra en vivo: salta al soltarlo**. Queda
+recordado. En los ajustes hay además cuatro esquinas de siempre y un botón *Volver a la esquina*
+para deshacer el arrastre.
 
 | Gesto sobre el minimapa | Efecto |
 | --- | --- |
+| **Arrastrar por la cabecera** | Mueve el minimapa por la pantalla |
 | Clic | Mueve la cámara a ese punto |
 | Rueda del ratón | Zoom (de 1× a 8×) |
 | **Shift** + arrastrar, o botón central | Desplazar el mapa dentro del marco |
@@ -140,7 +147,9 @@ pone todos el master, no hay a quién seguir y el revelado automático no hace n
 El master ve lo no revelado translúcido, para trabajar sobre el mapa completo; los jugadores lo ven
 opaco. El marcador lo ven todos.
 
-La imagen se elige con **la biblioteca de imágenes de Owlbear** (botón *Elegir*), o pegando una URL.
+La imagen se elige con el botón **Elegir de mi biblioteca de Owlbear**, que abre la misma
+biblioteca de siempre; o pegando una URL a mano, si la tienes alojada en otro sitio. Ojo: tiene que
+ser una imagen con CORS permitido — las de la biblioteca de Owlbear lo están.
 
 ## Cada escena con su mapa
 
@@ -243,5 +252,10 @@ Detalles que importan:
 
 ## Historial
 
+- **1.1.0** — El minimapa se puede arrastrar por su cabecera y recuerda dónde lo dejaste. El
+  selector de la biblioteca de imágenes pasa a primer plano, que antes era un botón diminuto al
+  lado del campo de URL y no se veía.
+- **1.0.1** — Corregidas las rutas del manifiesto: Owlbear las resuelve desde el origen, no como
+  URLs relativas, así que sin el subdirectorio la extensión no cargaba nada.
 - **1.0.0** — Primera versión: los tres modos, mapa por escena, revelado compartido por imagen,
   revelado automático siguiendo al grupo, temas pergamino y oscuro.
