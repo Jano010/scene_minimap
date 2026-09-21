@@ -1,0 +1,16 @@
+{
+  "name": "Scene Minimap",
+  "version": "1.0.0",
+  "manifest_version": 1,
+  "description": "Minimapa flotante con el mapa, los tokens y el encuadre. Revelado por zonas que se comparte entre escenas.",
+  "author": "jano",
+  "icon": "icon.svg",
+  "action": {
+    "title": "Minimapa",
+    "icon": "icon.svg",
+    "popover": "action.html",
+    "width": 340,
+    "height": 460
+  },
+  "background_url": "background.html"
+}

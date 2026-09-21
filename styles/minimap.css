@@ -1,0 +1,362 @@
+/* ---------------------------------------------------- */
+/*  Scene Minimap — el panel flotante                   */
+/*                                                      */
+/*  Portado del modulo de Foundry. La diferencia grande: */
+/*  aqui el panel es un iframe entero, asi que el anclaje */
+/*  no se hace con CSS sino con la posicion del popover. */
+/* ---------------------------------------------------- */
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: transparent;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+.mm-root {
+  --mm-party: #4ec9f5;
+  --mm-friendly: #5bd66f;
+  --mm-neutral: #d7c25a;
+  --mm-hostile: #f5544e;
+  --mm-secret: #b46ef0;
+
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 5px;
+  color: #eee;
+  background: rgba(20, 20, 24, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 6px;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.5);
+  transition: opacity 160ms ease;
+}
+
+/* Atenuado mientras no pasas el raton por encima */
+.mm-root.mm-fade { opacity: 0.45; }
+.mm-root.mm-fade:hover { opacity: 1; }
+
+/* ---------------------------------------------------- */
+/*  Cabecera                                            */
+/* ---------------------------------------------------- */
+
+.mm-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 18px;
+}
+
+.mm-title {
+  flex: 1;
+  font-size: 0.68rem;
+  color: #ccc;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mm-btn {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 18px;
+  padding: 0;
+  line-height: 1;
+  font-size: 0.7rem;
+  color: #ddd;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 3px;
+  opacity: 0;
+  cursor: pointer;
+  transition: opacity 120ms ease;
+}
+
+.mm-root:hover .mm-btn { opacity: 1; }
+
+.mm-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.mm-btn.mm-btn-warn {
+  color: #ffcf6b;
+  border-color: rgba(255, 207, 107, 0.45);
+  opacity: 1;
+}
+
+/* ---------------------------------------------------- */
+/*  El mapa                                             */
+/* ---------------------------------------------------- */
+
+/* El marco es de tamano fijo; el mapa vive dentro y se desplaza. */
+.mm-frame {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--mm-edge, rgba(255, 255, 255, 0.2));
+  border-radius: 3px;
+  background: var(--mm-void, #11131a);
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.mm-canvas {
+  position: absolute;
+  will-change: left, top;
+}
+
+.mm-frame.mm-panning { cursor: grabbing; }
+
+/* Sin imagen de mapa: rejilla lisa */
+.mm-frame.mm-noimage {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+.mm-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  opacity: 0.85;
+}
+
+/* Orden de pintado, de abajo arriba: piezas, la pieza actual, el encuadre,
+   los tokens y el marcador. Sin esto la pieza actual, que se eleva para que
+   su halo no lo tapen las vecinas, se comia los puntos de los tokens. */
+
+/* Encuadre actual de la camara */
+.mm-viewport {
+  position: absolute;
+  z-index: 3;
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+}
+
+/* ---------------------------------------------------- */
+/*  Modo imagen: revelado por zonas                     */
+/* ---------------------------------------------------- */
+
+.mm-frame.mm-image { cursor: default; }
+.mm-frame.mm-image.mm-gm { cursor: cell; }
+
+.mm-mask {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Zona sin revelar. Para los jugadores es opaca; el GM la ve translucida
+   para poder trabajar sobre el mapa completo. */
+.mm-cell {
+  position: absolute;
+  background: #0a0b0f;
+}
+
+.mm-frame.mm-gm .mm-cell {
+  background: rgba(10, 11, 15, 0.78);
+  outline: 1px solid rgba(255, 255, 255, 0.04);
+  outline-offset: -1px;
+}
+
+/* ---------------------------------------------------- */
+/*  Modo piezas: el mapa montado con los items          */
+/* ---------------------------------------------------- */
+
+.mm-frame.mm-items {
+  background: #0a0b0f;
+  cursor: default;
+}
+
+.mm-frame.mm-items.mm-gm .mm-piece { cursor: pointer; }
+
+.mm-piece {
+  position: absolute;
+  object-fit: fill;
+  transform-origin: center;
+}
+
+/* Pieza aun sin revelar: solo la ve el GM, en tenue, para poder trabajar
+   sobre el plano completo mientras los jugadores no ven nada. */
+.mm-frame.mm-gm .mm-piece.mm-veiled {
+  opacity: 0.22 !important;
+  filter: grayscale(1);
+  outline: 1px dashed rgba(255, 255, 255, 0.25);
+  outline-offset: -1px;
+}
+
+/* Donde esta el grupo ahora mismo */
+.mm-piece.mm-current {
+  outline: 2px solid var(--mm-party);
+  outline-offset: -2px;
+  box-shadow: 0 0 10px rgba(78, 201, 245, 0.85);
+  animation: mm-pulse-soft 2.4s ease-in-out infinite;
+  z-index: 2;
+  pointer-events: auto;
+}
+
+@keyframes mm-pulse-soft {
+  0%, 100% { box-shadow: 0 0 6px rgba(78, 201, 245, 0.55); }
+  50%      { box-shadow: 0 0 14px rgba(78, 201, 245, 1); }
+}
+
+/* Marcador de "aqui esta el grupo" */
+.mm-marker {
+  position: absolute;
+  width: 11px;
+  height: 11px;
+  margin: -5.5px 0 0 -5.5px;
+  background: var(--mm-party);
+  border: 2px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(78, 201, 245, 0.9);
+  pointer-events: none;
+  z-index: 5;
+  animation: mm-pulse 2s ease-in-out infinite;
+}
+
+@keyframes mm-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.25); }
+}
+
+/* ---------------------------------------------------- */
+/*  Tokens                                              */
+/* ---------------------------------------------------- */
+
+.mm-dot {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  margin: -3.5px 0 0 -3.5px;   /* centrar sobre la coordenada */
+  border: 1px solid rgba(0, 0, 0, 0.75);
+  border-radius: 50%;
+  pointer-events: all;
+  cursor: pointer;
+  z-index: 4;
+}
+
+.mm-dot.mm-party    { background: var(--mm-party); }
+.mm-dot.mm-friendly { background: var(--mm-friendly); }
+.mm-dot.mm-neutral  { background: var(--mm-neutral); }
+.mm-dot.mm-hostile  { background: var(--mm-hostile); }
+.mm-dot.mm-secret   { background: var(--mm-secret); }
+
+/* Token seleccionado */
+.mm-dot.mm-selected {
+  box-shadow: 0 0 0 2px #fff, 0 0 6px rgba(255, 255, 255, 0.9);
+}
+
+/* Token oculto (solo lo ve el GM) */
+.mm-dot.mm-dim {
+  opacity: 0.5;
+  border-style: dashed;
+}
+
+.mm-empty {
+  margin: 0;
+  padding: 10px 14px;
+  font-size: 0.7rem;
+  font-style: italic;
+  color: #aaa;
+  text-align: center;
+}
+
+/* ---------------------------------------------------- */
+/*  Tema pergamino                                      */
+/* ---------------------------------------------------- */
+
+.mm-root.mm-theme-parchment {
+  --mm-paper: #d6cebc;
+  --mm-paper-shade: #bdb29b;
+  --mm-ink: #332e26;
+  --mm-void: var(--mm-paper);
+  --mm-edge: #5d5344;
+  --mm-party: #c0392b;
+
+  color: var(--mm-ink);
+  /* Grano y desgaste del papel, todo en CSS: sin imagenes externas. */
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(255, 252, 240, 0.55), transparent 60%),
+    radial-gradient(ellipse at 70% 85%, rgba(120, 96, 60, 0.18), transparent 55%),
+    var(--mm-paper);
+  border: 1px solid var(--mm-edge);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.45), inset 0 0 22px rgba(120, 96, 60, 0.3);
+}
+
+/* Doble filete, como el marco dibujado de un mapa de verdad */
+.mm-theme-parchment .mm-frame {
+  border: 1px solid var(--mm-edge);
+  outline: 1px solid var(--mm-edge);
+  outline-offset: 2px;
+  margin: 2px;
+  background: var(--mm-paper);
+  box-shadow: inset 0 0 18px rgba(120, 96, 60, 0.35);
+}
+
+.mm-theme-parchment .mm-title {
+  color: var(--mm-ink);
+  font-variant: small-caps;
+  letter-spacing: 0.04em;
+}
+
+.mm-theme-parchment .mm-btn {
+  color: var(--mm-ink);
+  background: rgba(93, 83, 68, 0.12);
+  border-color: rgba(93, 83, 68, 0.45);
+}
+
+.mm-theme-parchment .mm-btn:hover {
+  color: #000;
+  background: rgba(93, 83, 68, 0.28);
+}
+
+/* Lo no explorado es papel en blanco, no un agujero negro */
+.mm-theme-parchment .mm-cell { background: var(--mm-paper); }
+
+.mm-theme-parchment .mm-frame.mm-gm .mm-cell {
+  background: rgba(189, 178, 155, 0.82);
+  outline-color: rgba(93, 83, 68, 0.18);
+}
+
+.mm-theme-parchment .mm-frame.mm-items { background: var(--mm-paper); }
+
+.mm-theme-parchment .mm-frame.mm-gm .mm-piece.mm-veiled {
+  opacity: 0.3 !important;
+  filter: grayscale(1) sepia(0.5);
+  outline-color: rgba(93, 83, 68, 0.4);
+}
+
+.mm-theme-parchment .mm-viewport {
+  border-color: rgba(51, 46, 38, 0.9);
+  background: rgba(51, 46, 38, 0.1);
+}
+
+.mm-theme-parchment .mm-frame.mm-noimage {
+  background-image:
+    linear-gradient(rgba(93, 83, 68, 0.13) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(93, 83, 68, 0.13) 1px, transparent 1px);
+}
+
+.mm-theme-parchment .mm-marker {
+  background: #c0392b;
+  border-color: #f3ead6;
+  box-shadow: 0 0 8px rgba(192, 57, 43, 0.85);
+}
+
+.mm-theme-parchment .mm-piece.mm-current {
+  outline-color: #c0392b;
+  box-shadow: 0 0 10px rgba(192, 57, 43, 0.8);
+  animation: none;
+}
+
+.mm-theme-parchment .mm-empty { color: rgba(51, 46, 38, 0.7); }
